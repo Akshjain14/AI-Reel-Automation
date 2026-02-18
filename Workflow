@@ -1,1 +1,282 @@
-
+{
+  "name": "Instagram Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 20,
+              "triggerAtMinute": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -640,
+        -1104
+      ],
+      "id": "f6edf917-8e7a-4f57-a09a-47b9013e47a7",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -864
+      ],
+      "id": "a995040b-92c6-46cc-b063-4945395261b9",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1aef6f55-f875-46e6-9572-d232a7256019",
+              "name": "=reel_name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "3c705363-7226-494c-b0e3-197e804ada41",
+              "name": "reel_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -16,
+        -864
+      ],
+      "id": "e1ccd3cf-c33e-4bd4-94a5-9ea2b283feca",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are an Instagram content creator.\n\nGenerate:\n1 short engaging caption\n5 relevant hashtags\n\nReel name: {{$json.reel_name}}\n\nReturn response strictly in JSON format like:\n{\n  \"caption\": \"...\",\n  \"hashtags\": \"...\"\n}\nGenerate an Instagram reel caption.\ncategory: \nMake caption aligned with category tone.\nReturn JSON with caption and hashtags."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        -1072
+      ],
+      "id": "c03b4123-1fc0-4807-b362-95bc80e341b3",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "1Yp8sfVYr0wFXrbz",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst raw = $json.output[0].content[0].text;\n\n// Remove ```json and ``` if present\nconst cleaned = raw.replace(/```json|```/g, \"\").trim();\n\nconst parsed = JSON.parse(cleaned);\n\nreturn [\n  {\n    json: {\n      reel_name: $json.reel_name,\n      reel_id: $json.reel_id,\n      caption: parsed.caption,\n      hashtags: parsed.hashtags\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        -864
+      ],
+      "id": "a13132b4-47ed-4163-9292-7a0ad7b51ccf",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "mimeType='video/mp4' and '14LKiEl-neNhf8-MxyPDPvlsOlLsLOX6q' in parents",
+        "limit": 1,
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -432,
+        -864
+      ],
+      "id": "bbe50eef-8b9a-44e5-94ad-8163d39332be",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "LwXBA3m4A7VbzsVg",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{$node[\"Limit\"].json[\"id\"]}}\n\n",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1HRWI5NZFk_PD4lbQrEGPKLfmQKyGwCmD",
+          "mode": "list",
+          "cachedResultName": "used",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1HRWI5NZFk_PD4lbQrEGPKLfmQKyGwCmD"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        864,
+        -1056
+      ],
+      "id": "45cf76f7-2ab8-4693-8b2f-d25ca45aaf53",
+      "name": "Move file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "LwXBA3m4A7VbzsVg",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot8203470332:AAH2We-8aUBVCXyjZZwXhyelVA3u91McTDc/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"1990180652\",\n  \"text\": \"🎬 Reel:{{ $('Search files and folders').item.json.name }} \\n\\n✍ Caption:\\n{{$json.caption}}\\n\\n🏷 Hashtags:\\n{{$json.hashtags}}\\n\\n🔗 Download:\\nhttps://drive.google.com/file/d/{{ $('Search files and folders').item.json.id }}/view\\n\\n📱 Open Instagram:\\nhttps://instagram.com/automationpage\\n(Use mobile for direct app open)\\n\\n Automation by-Aksh\\n Hope you enjoy the automation.\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        -864
+      ],
+      "id": "8ee7b9bc-a72e-4a57-a377-63d026533f31",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Move file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7ac1d4cc-1989-4896-86e6-63a0740b6171",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b36d7214f91f0c5be3ba28d00e62e38fbedf0f282ed75359a7b75268cc2f7b6f"
+  },
+  "id": "ZBnLahCV6PGI0eYF",
+  "tags": []
+}
